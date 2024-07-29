@@ -1,9 +1,11 @@
-// See https://aka.ms/new-console-template for more information
+﻿// See https://aka.ms/new-console-template for more information
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 using Cocona;
+using Discord.WebSocket;
 using MarkovBot.Data;
+using MarkovBot.Discord;
 using MarkovBot.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +33,10 @@ builder.Services.AddSingleton<IDriver>(sp =>
         AuthTokens.Basic(db.User, db.Password));
 });
 builder.Services.AddTransient<IWordRepository, WordRepository>();
+builder.Services.AddTransient<IServerRepository, ServerRepository>();
+builder.Services.AddSingleton(new DiscordSocketConfig());
+builder.Services.AddSingleton<DiscordSocketClient>();
+builder.Services.AddSingleton<DiscordBot>();
 
 var app = builder.Build();
 
@@ -129,6 +135,18 @@ app.AddCommand("gen", async (
             throw new InvalidOperationException("No next word candidates found.");
     }
     await Console.Out.WriteLineAsync(builder.ToString());
+});
+
+app.AddCommand("bot", async ([FromService] DiscordBot bot, CoconaAppContext ctx) =>
+{
+    await bot.StartAsync();
+    // Bot runs on background so we have to explicitly wait.
+    try
+    {
+        await Task.Delay(Timeout.Infinite, ctx.CancellationToken);
+    }
+    catch (OperationCanceledException) { /* Do nothing because we're expecting this to happen. */ }
+    await bot.StopAsync();
 });
 
 await app.RunAsync();
