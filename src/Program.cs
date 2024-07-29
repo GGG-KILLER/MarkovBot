@@ -4,18 +4,26 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Cocona;
 using MarkovBot.Data;
+using MarkovBot.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Neo4j.Driver;
 
 var builder = CoconaApp.CreateBuilder();
 
-builder.Services.AddSingleton<IDriver>(_ =>
+builder.Services.AddOptions<DatabaseOptions>()
+                .Bind(builder.Configuration.GetSection("Database"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+builder.Services.AddSingleton<IDriver>(sp =>
 {
-    var creds = builder.Configuration.GetRequiredSection("Credentials");
+    var db = sp.GetRequiredService<IOptions<DatabaseOptions>>().Value;
+
     return GraphDatabase.Driver(
         builder.Configuration.GetConnectionString("Neo4j"),
-        AuthTokens.Basic(creds.GetValue<string>("User"), creds.GetValue<string>("Pass")));
+        AuthTokens.Basic(db.User, db.Password));
 });
 builder.Services.AddTransient<IWordRepository, WordRepository>();
 
