@@ -27,13 +27,7 @@ public sealed class MarkovCommands(IOptionsMonitor<BotOptions> botOptions, IWord
             return;
         }
 
-        await Context.Interaction.RespondAsync(embed: new EmbedBuilder
-        {
-            Color = Color.DarkGrey,
-            Title = "MarkovBot",
-            Description = "Generating...",
-            Timestamp = DateTimeOffset.Now
-        }.Build());
+        await Context.Interaction.RespondAsync("Generating...");
 
         var sw = Stopwatch.StartNew();
         var builder = new StringBuilder();
@@ -59,17 +53,7 @@ public sealed class MarkovCommands(IOptionsMonitor<BotOptions> botOptions, IWord
 
         await Context.Interaction.ModifyOriginalResponseAsync(prop =>
         {
-            prop.Embed = new EmbedBuilder
-            {
-                Color = Color.DarkGrey,
-                Title = "MarkovBot",
-                Description = builder.ToString(),
-                Timestamp = DateTimeOffset.Now,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Generated in {sw.Elapsed:ss's'fff'ms'}"
-                }
-            }.Build();
+            prop.Content = builder.ToString();
         }, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
     }
 }
