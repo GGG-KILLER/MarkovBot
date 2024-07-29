@@ -7,7 +7,12 @@ namespace MarkovBot.Data;
 
 public static class SentenceSplitter
 {
-    private static readonly SearchValues<string> s_linkStarts = SearchValues.Create(["http://", "https://"], StringComparison.Ordinal);
+    private static readonly SearchValues<string> s_nonSplitStarts = SearchValues.Create(
+        [
+            "http://", "https://", // Links
+            "<#", "<@", "</", "<:", "<a:", "<t:", "<id:" // Discord
+        ],
+        StringComparison.Ordinal);
 
     public static IEnumerable<string> SplitIntoParts(string sentence)
     {
@@ -17,7 +22,7 @@ public static class SentenceSplitter
 
         var linkIndex = 0;
         var linksBuilder = new List<uint>();
-        while ((linkIndex = sentence.AsSpan(linkIndex).IndexOfAny(s_linkStarts)) != -1)
+        while ((linkIndex = sentence.AsSpan(linkIndex).IndexOfAny(s_nonSplitStarts)) != -1)
         {
             linksBuilder.Add((uint)linkIndex);
 
