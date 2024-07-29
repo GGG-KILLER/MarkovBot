@@ -2,7 +2,7 @@ namespace MarkovBot.Data;
 
 public readonly record struct WordCandidate(string? Text, int Uses)
 {
-    public static WordCandidate Select(IList<WordCandidate> candidates, Random random)
+    public static WordCandidate Select(IReadOnlyList<WordCandidate> candidates, Random random)
     {
         var acc = 0;
         var cdf = new List<int>(candidates.Count);
