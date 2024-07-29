@@ -89,6 +89,11 @@ app.AddCommand("gen", async (
 ) =>
 {
     var candidates = await wordRepository.SelectStarterWordCandidatesAsync(server);
+    if (candidates.Length < 1)
+    {
+        await Console.Error.WriteLineAsync("No starter word candidates found.");
+        return;
+    }
 
     var builder = new StringBuilder();
     var len = 0;
@@ -106,6 +111,8 @@ app.AddCommand("gen", async (
 
         // Select the next candidates
         candidates = await wordRepository.SelectNextWordCandidatesAsync(server, current);
+        if (candidates.Length < 1)
+            throw new InvalidOperationException("No next word candidates found.");
     }
     await Console.Out.WriteLineAsync(builder.ToString());
 });
