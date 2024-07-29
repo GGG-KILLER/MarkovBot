@@ -18,6 +18,6 @@ public readonly record struct WordCandidate(string? Text, int Uses)
         if (index >= 0)
             return candidates[index];
         else
-            return candidates[~index];
+            return candidates[Math.Clamp(~index, 0, candidates.Count - 1)];
     }
 }
