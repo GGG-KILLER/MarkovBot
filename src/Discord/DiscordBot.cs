@@ -13,6 +13,7 @@ internal sealed class DiscordBot(
     IServiceProvider serviceProvider,
     IOptionsMonitor<BotOptions> botOptions,
     DiscordSocketClient discordClient,
+    IWordRepository wordRepository,
     IServerRepository serverRepository,
     ILogger<DiscordBot> logger)
 {
@@ -25,13 +26,14 @@ internal sealed class DiscordBot(
 
     public async Task StartAsync()
     {
-        discordClient.Ready += ClientReady;
+        discordClient.Ready += ClientReadyHandler;
         discordClient.JoinedGuild += GuildInitHandler;
         discordClient.GuildAvailable += GuildInitHandler;
-        discordClient.Log += MessageLogged;
-        discordClient.InteractionCreated += InteractionCreated;
+        discordClient.Log += MessageLoggedHandler;
+        discordClient.InteractionCreated += InteractionCreatedHandler;
+        discordClient.MessageReceived += MessageReceivedHandler;
 
-        _interactionService.Log += MessageLogged;
+        _interactionService.Log += MessageLoggedHandler;
 
         await _interactionService.AddModuleAsync<MarkovCommands>(serviceProvider);
         await _interactionService.AddModuleAsync<AdminCommands>(serviceProvider);
@@ -40,13 +42,25 @@ internal sealed class DiscordBot(
         await discordClient.StartAsync().ConfigureAwait(false);
     }
 
-    private async Task InteractionCreated(SocketInteraction interaction)
+    private async Task MessageReceivedHandler(SocketMessage message)
+    {
+        if (message.Type is not (MessageType.Default or MessageType.Reply)
+            || message.Source is not MessageSource.User)
+            return;
+
+        var channel = (SocketGuildChannel)message.Channel;
+        var guild = channel.Guild.Id.ToString();
+        var parts = SentenceSplitter.SplitIntoParts(message.Content).ToArray();
+        await wordRepository.ImportSentenceParts(guild, parts);
+    }
+
+    private async Task InteractionCreatedHandler(SocketInteraction interaction)
     {
         var ctx = new SocketInteractionContext(discordClient, interaction);
         await _interactionService.ExecuteCommandAsync(ctx, serviceProvider);
     }
 
-    private async Task MessageLogged(LogMessage message)
+    private async Task MessageLoggedHandler(LogMessage message)
     {
         await Task.Yield();
 
@@ -64,7 +78,7 @@ internal sealed class DiscordBot(
         logger.Log(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
     }
 
-    private async Task ClientReady()
+    private async Task ClientReadyHandler()
     {
 #if DEBUG
         await _interactionService.RegisterCommandsToGuildAsync(botOptions.CurrentValue.TestGuild, true)

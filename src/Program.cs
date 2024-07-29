@@ -34,7 +34,10 @@ builder.Services.AddSingleton<IDriver>(sp =>
 });
 builder.Services.AddTransient<IWordRepository, WordRepository>();
 builder.Services.AddTransient<IServerRepository, ServerRepository>();
-builder.Services.AddSingleton(new DiscordSocketConfig());
+builder.Services.AddSingleton(new DiscordSocketConfig
+{
+    GatewayIntents = Discord.GatewayIntents.Guilds | Discord.GatewayIntents.GuildMessages | Discord.GatewayIntents.MessageContent
+});
 builder.Services.AddSingleton<DiscordSocketClient>();
 builder.Services.AddSingleton<DiscordBot>();
 
