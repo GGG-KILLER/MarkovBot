@@ -82,8 +82,9 @@ app.AddCommand("import", async (
 
     static async Task WriteLines(IWordRepository wordRepository, string server, ChannelReader<string> lineReader, CancellationToken cancellationToken)
     {
-        while (lineReader.TryRead(out var sentence))
+        while (await lineReader.WaitToReadAsync(cancellationToken))
         {
+            var sentence = await lineReader.ReadAsync(cancellationToken);
             await Console.Out.WriteLineAsync($"Importing sentence: {sentence}");
             var parts = SentenceSplitter.SplitIntoParts(sentence).ToArray();
             if (parts.Length < 1)
