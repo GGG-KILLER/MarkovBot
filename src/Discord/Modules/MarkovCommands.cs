@@ -27,7 +27,7 @@ public sealed class MarkovCommands(IOptionsMonitor<BotOptions> botOptions, IWord
             return;
         }
 
-        await Context.Interaction.RespondAsync("Generating...");
+        await Context.Interaction.RespondAsync("Generating...", allowedMentions: new AllowedMentions(AllowedMentionTypes.None));
 
         var sw = Stopwatch.StartNew();
         var builder = new StringBuilder();
