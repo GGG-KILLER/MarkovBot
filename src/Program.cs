@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -14,6 +14,11 @@ var builder = CoconaApp.CreateBuilder();
 
 builder.Services.AddOptions<DatabaseOptions>()
                 .Bind(builder.Configuration.GetSection("Database"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+builder.Services.AddOptions<BotOptions>()
+                .Bind(builder.Configuration.GetSection("Bot"))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
