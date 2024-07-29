@@ -106,7 +106,7 @@ app.AddCommand("gen", async (
         builder.Append(current);
         len += 1;
 
-        if (maxLength != -1 && len + 1 >= maxLength)
+        if (maxLength != -1 && len >= maxLength)
             break;
 
         // Select the next candidates
