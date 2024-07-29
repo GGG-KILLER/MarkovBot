@@ -72,7 +72,13 @@ internal sealed class WordRepository(IDriver driver) : IWordRepository, IAsyncDi
         {
             var result = await tx.RunAsync(
                 """
-                MATCH (start:Start)-[conn:FOLLOWED_BY {server: $server}]->(starter:Word) RETURN starter.text, conn.uses
+                MATCH (start:Start)-[conn:FOLLOWED_BY {server: $server}]->(starter:Word)
+                WITH distinct starter, conn
+                OPTIONAL MATCH (server:Server {id: $server})-[:FORBIDS_WORD]->(forbidden:Word)
+                    WHERE forbidden = starter
+                WITH starter, conn, count(forbidden) AS excl
+                    WHERE excl = 0
+                RETURN starter.text, conn.uses
                 """, new { server });
 
             return await result.Select(r => new WordCandidate(r[0].As<string?>(), r[1].As<int>())).ToArrayAsync();
@@ -87,7 +93,13 @@ internal sealed class WordRepository(IDriver driver) : IWordRepository, IAsyncDi
         {
             var result = await tx.RunAsync(
                 """
-                MATCH (curr:Word {text: $text})-[conn:FOLLOWED_BY {server: $server}]->(next) RETURN next.text, conn.uses
+                MATCH (curr:Word {text: $text})-[conn:FOLLOWED_BY {server: $server}]->(next)
+                WITH distinct next, conn
+                OPTIONAL MATCH (server:Server {id: $server})-[:FORBIDS_WORD]->(forbidden:Word)
+                    WHERE forbidden = next
+                WITH next, conn, count(forbidden) AS excl
+                    WHERE excl = 0
+                RETURN next.text, conn.uses
                 """, new { text = currentWord, server });
 
             return await result.Select(r => new WordCandidate(r[0].As<string?>(), r[1].As<int>())).ToArrayAsync();
